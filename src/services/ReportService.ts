@@ -110,26 +110,37 @@ export class ReportService {
   }
 
   printSummary(stats: TransactionStats, transactions: Transaction[]): void {
-    console.log('📊 利用サマリー');
-    console.log('================');
-    console.log(`総利用回数: ${stats.count} 回`);
-    console.log(`総利用金額: ¥${stats.totalAmount.toLocaleString()}`);
-    console.log(`平均利用額: ¥${Math.round(stats.totalAmount / stats.count).toLocaleString()}`);
+    console.log('# 住信SBIネット銀行 デビットカード利用レポート\n');
+
+    console.log('## 利用サマリー\n');
+    console.log('| 項目 | 値 |');
+    console.log('|------|-----|');
+    console.log(`| 総利用回数 | ${stats.count} 回 |`);
+    console.log(`| 総利用金額 | ¥${stats.totalAmount.toLocaleString()} |`);
+    console.log(
+      `| 平均利用額 | ¥${Math.round(stats.totalAmount / stats.count).toLocaleString()} |`
+    );
 
     // よく使う加盟店TOP5
-    console.log('\n🏪 利用回数TOP5加盟店:');
+    console.log('\n## 利用回数TOP5加盟店\n');
+    console.log('| 順位 | 加盟店 | 利用回数 | 合計金額 |');
+    console.log('|------|--------|----------|----------|');
     const topMerchants = Object.entries(stats.merchants)
       .sort((a, b) => b[1].count - a[1].count)
       .slice(0, 5);
 
-    topMerchants.forEach(([merchant, data]) => {
-      console.log(`  ${merchant}: ${data.count}回 (¥${data.total.toLocaleString()})`);
+    topMerchants.forEach(([merchant, data], index) => {
+      console.log(
+        `| ${index + 1} | ${merchant} | ${data.count}回 | ¥${data.total.toLocaleString()} |`
+      );
     });
 
     // 最近の利用
-    console.log('\n📅 最近の利用 (直近5件):');
+    console.log('\n## 最近の利用 (直近5件)\n');
+    console.log('| 日付 | 加盟店 | 金額 |');
+    console.log('|------|--------|------|');
     transactions.slice(0, 5).forEach((t) => {
-      console.log(`  ${t.transactionDate} ${t.merchant}: ¥${t.amount.toLocaleString()}`);
+      console.log(`| ${t.transactionDate} | ${t.merchant} | ¥${t.amount.toLocaleString()} |`);
     });
   }
 }

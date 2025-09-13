@@ -22,9 +22,7 @@ export class GmailAuth {
 
   async authorize(): Promise<OAuth2Client> {
     try {
-      console.log(`📂 トークンファイルを確認中: ${TOKEN_PATH}`);
       const token = await this.loadToken();
-      console.log('✅ トークンファイルを読み込みました');
 
       this.oauth2Client.setCredentials(token);
 
@@ -33,30 +31,24 @@ export class GmailAuth {
       const expiryBuffer = 5 * 60 * 1000; // 5分のバッファ
 
       if (token.expiry_date) {
-        const expiryDate = new Date(token.expiry_date);
-        console.log(`⏰ トークン有効期限: ${expiryDate.toLocaleString('ja-JP')}`);
-
         if (token.expiry_date - expiryBuffer < now) {
           // リフレッシュトークンがある場合は自動更新
           if (token.refresh_token) {
-            console.log('🔄 アクセストークンを自動更新中...');
             return await this.refreshAccessToken();
           } else {
-            console.log('⚠️ リフレッシュトークンが見つかりません。再認証が必要です。');
+            console.log('リフレッシュトークンが見つかりません。再認証が必要です。');
             return await this.getNewToken();
           }
         }
       }
 
-      console.log('✅ 既存のトークンを使用します');
       return this.oauth2Client;
     } catch (error) {
       // ファイルが存在しない場合は新規認証
       if ((error as any).code === 'ENOENT') {
-        console.log('🔐 初回認証を開始します...');
+        console.log('初回認証を開始します...');
       } else {
-        console.log('⚠️ トークンの読み込みに失敗しました。再認証します...');
-        console.error('エラー詳細:', error);
+        console.log('トークンの読み込みに失敗しました。再認証します...');
       }
       return await this.getNewToken();
     }
@@ -74,7 +66,7 @@ export class GmailAuth {
       prompt: 'consent', // 常にリフレッシュトークンを取得
     });
 
-    console.log('\n🔐 Gmail認証が必要です');
+    console.log('\nGmail認証が必要です');
     console.log('以下のURLをブラウザで開いて認証してください:\n');
     console.log(authUrl);
 
@@ -93,7 +85,7 @@ export class GmailAuth {
     if (useServer) {
       console.log('\nブラウザで認証を完了してください...');
       code = await startCallbackServer(3000);
-      console.log('\n✅ 認証コードを自動取得しました');
+      console.log('\n認証コードを自動取得しました');
     } else {
       code = await new Promise<string>((resolve) => {
         rl.question('\nURLから code= の値をコピーして貼り付けてください: ', (code) => {
@@ -135,11 +127,10 @@ export class GmailAuth {
       // トークンを保存
       await this.saveToken(credentials);
 
-      console.log('✅ アクセストークンを自動更新しました');
       return this.oauth2Client;
     } catch (error) {
-      console.error('❌ トークンの自動更新に失敗しました:', error);
-      console.log('🔐 再認証が必要です...');
+      console.error('トークンの自動更新に失敗しました:', error);
+      console.log('再認証が必要です...');
       return await this.getNewToken();
     }
   }

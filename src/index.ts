@@ -37,7 +37,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    console.log(`\n✅ ${transactions.length} 件の取引を抽出しました\n`);
+    console.log(`\n${transactions.length} 件の取引を抽出しました\n`);
 
     // 日付順にソート（新しい順）
     transactions.sort(
@@ -54,10 +54,10 @@ async function main(): Promise<void> {
     // CSV出力
     const { csvPath, monthlyCsvPath } = await reportService.generateReports(transactions);
 
-    console.log(`\n📁 詳細CSVファイルを保存しました: ${csvPath}`);
-    console.log(`📁 月別サマリーを保存しました: ${monthlyCsvPath}`);
+    console.log(`\n詳細CSVファイルを保存しました: ${csvPath}`);
+    console.log(`月別サマリーを保存しました: ${monthlyCsvPath}`);
   } catch (error) {
-    console.error('\n❌ エラーが発生しました:', error);
+    console.error('\nエラーが発生しました:', error);
     if (error instanceof Error) {
       console.error(error.stack);
     }
