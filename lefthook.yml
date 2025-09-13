@@ -1,0 +1,60 @@
+# Lefthook configuration
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    # TypeScript/JavaScript Linting
+    eslint:
+      glob: '*.{ts,tsx,js,jsx}'
+      run: npx eslint {staged_files} --fix
+      stage_fixed: true
+
+    # Code Formatting with Prettier
+    prettier:
+      glob: '*.{ts,tsx,js,jsx,json,md,yml,yaml}'
+      run: npx prettier --write {staged_files}
+      stage_fixed: true
+
+    # Markdown Linting
+    markdownlint:
+      glob: '*.md'
+      run: npx markdownlint {staged_files} --fix
+      stage_fixed: true
+
+    # TypeScript Type Checking
+    typescript:
+      run: npx tsc --noEmit
+
+    # Run Tests
+    jest:
+      run: npm test -- --passWithNoTests --bail --findRelatedTests {staged_files}
+      glob: '*.{ts,tsx}'
+
+pre-push:
+  parallel: false
+  commands:
+    # Full Test Suite
+    test:
+      run: npm test
+
+    # Build Check
+    build:
+      run: npm run build
+
+    # Full Lint Check
+    lint-all:
+      run: npx eslint src/**/*.ts
+
+commit-msg:
+  commands:
+    commitlint:
+      run: npx commitlint --edit {1}
+
+# Skip hooks in CI/CD environments
+skip:
+  - merge
+  - rebase
+
+# Colors for output
+colors: true
