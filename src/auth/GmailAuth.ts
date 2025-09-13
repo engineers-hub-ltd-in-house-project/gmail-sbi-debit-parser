@@ -4,8 +4,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import readline from 'readline';
-import { startCallbackServer } from './callbackServer';
-import { GmailConfig } from '../types/index';
+import { startCallbackServer } from './callbackServer.js';
+import { GmailConfig } from '../types/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TOKEN_PATH = path.join(__dirname, '../../config/token.json');

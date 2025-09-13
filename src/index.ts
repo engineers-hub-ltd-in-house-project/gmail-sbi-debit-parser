@@ -1,10 +1,8 @@
-#!/usr/bin/env node
-
 import dotenv from 'dotenv';
 import dayjs from 'dayjs';
-import { GmailAuth } from './auth/GmailAuth';
-import { SBIDebitParser } from './parsers/SBIDebitParser';
-import { ReportService } from './services/ReportService';
+import { GmailAuth } from './auth/GmailAuth.js';
+import { SBIDebitParser } from './parsers/SBIDebitParser.js';
+import { ReportService } from './services/ReportService.js';
 
 dotenv.config();
 
