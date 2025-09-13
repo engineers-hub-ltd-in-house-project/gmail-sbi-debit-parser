@@ -2,13 +2,11 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import readline from 'readline';
 import { startCallbackServer } from './callbackServer.js';
 import { GmailConfig } from '../types/index.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const TOKEN_PATH = path.join(__dirname, '../../config/token.json');
+const TOKEN_PATH = path.join(process.cwd(), 'config/token.json');
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 
 export class GmailAuth {
@@ -24,10 +22,42 @@ export class GmailAuth {
 
   async authorize(): Promise<OAuth2Client> {
     try {
+      console.log(`📂 トークンファイルを確認中: ${TOKEN_PATH}`);
       const token = await this.loadToken();
+      console.log('✅ トークンファイルを読み込みました');
+
       this.oauth2Client.setCredentials(token);
+
+      // トークンの有効期限をチェック（期限の5分前に更新）
+      const now = Date.now();
+      const expiryBuffer = 5 * 60 * 1000; // 5分のバッファ
+
+      if (token.expiry_date) {
+        const expiryDate = new Date(token.expiry_date);
+        console.log(`⏰ トークン有効期限: ${expiryDate.toLocaleString('ja-JP')}`);
+
+        if (token.expiry_date - expiryBuffer < now) {
+          // リフレッシュトークンがある場合は自動更新
+          if (token.refresh_token) {
+            console.log('🔄 アクセストークンを自動更新中...');
+            return await this.refreshAccessToken();
+          } else {
+            console.log('⚠️ リフレッシュトークンが見つかりません。再認証が必要です。');
+            return await this.getNewToken();
+          }
+        }
+      }
+
+      console.log('✅ 既存のトークンを使用します');
       return this.oauth2Client;
-    } catch {
+    } catch (error) {
+      // ファイルが存在しない場合は新規認証
+      if ((error as any).code === 'ENOENT') {
+        console.log('🔐 初回認証を開始します...');
+      } else {
+        console.log('⚠️ トークンの読み込みに失敗しました。再認証します...');
+        console.error('エラー詳細:', error);
+      }
       return await this.getNewToken();
     }
   }
@@ -41,6 +71,7 @@ export class GmailAuth {
     const authUrl = this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES,
+      prompt: 'consent', // 常にリフレッシュトークンを取得
     });
 
     console.log('\n🔐 Gmail認証が必要です');
@@ -78,6 +109,39 @@ export class GmailAuth {
     await this.saveToken(tokens);
 
     return this.oauth2Client;
+  }
+
+  private async refreshAccessToken(): Promise<OAuth2Client> {
+    try {
+      // 現在のトークンを取得
+      const currentToken = await this.loadToken();
+
+      // リフレッシュトークンをセット
+      this.oauth2Client.setCredentials({
+        refresh_token: currentToken.refresh_token,
+      });
+
+      // 新しいアクセストークンを取得
+      const { credentials } = await this.oauth2Client.refreshAccessToken();
+
+      // リフレッシュトークンが新しいcredentialsに含まれない場合は、既存のものを保持
+      if (!credentials.refresh_token && currentToken.refresh_token) {
+        credentials.refresh_token = currentToken.refresh_token;
+      }
+
+      // 新しいトークンをセット
+      this.oauth2Client.setCredentials(credentials);
+
+      // トークンを保存
+      await this.saveToken(credentials);
+
+      console.log('✅ アクセストークンを自動更新しました');
+      return this.oauth2Client;
+    } catch (error) {
+      console.error('❌ トークンの自動更新に失敗しました:', error);
+      console.log('🔐 再認証が必要です...');
+      return await this.getNewToken();
+    }
   }
 
   private async saveToken(tokens: any): Promise<void> {
